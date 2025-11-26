@@ -10,9 +10,9 @@ Este repositório hospeda o código-fonte da aplicação desenvolvida para o pro
 | Nome Completo | Prontuário |
 | :--- | :--- |
 | Mateus G. P. Campos | JC3019705 |
-| Kevin L. R. de Candia | JC3018784 |
-| Ray G. dos S. Martins | JC3019543 |
-| Kauê M. de Araujo | JC3019497 |
+|  | JC3018784 |
+|  | JC3019543 |
+|  | JC3019497 |
 
 ---
 
