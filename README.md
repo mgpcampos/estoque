@@ -11,8 +11,8 @@ Este repositório hospeda o código-fonte da aplicação desenvolvida para o pro
 | :--- | :--- |
 | Mateus G. P. Campos | JC3019705 |
 |  | JC3018784 |
-|  | JC3019543 |
-|  | JC3019497 |
+| Ray G. dos S. Martins | JC3019543 |
+| Kauê M. de Araujo | JC3019497 |
 
 ---
 
