@@ -1,18 +1,15 @@
-> [!NOTE]
-> Este documento encontra-se em contínua elaboração e poderá sofrer alterações futuras.
-
-# Sistema Genérico de Gerenciamento de Inventário
+# Estoque
 
 Este repositório hospeda o código-fonte da aplicação desenvolvida para o projeto final da disciplina de **Desenvolvimento de Aplicações Web**.
 
 ### Integrantes do Grupo
 
-| Nome Completo | Prontuário |
-| :--- | :--- |
-| Mateus G. P. Campos | JC3019705 |
-|  | JC3018784 |
-| Ray G. dos S. Martins | JC3019543 |
-| Kauê M. de Araujo | JC3019497 |
+| Nome Completo         | Prontuário |
+| :---                  | :---       |
+| Mateus G. P. Campos   | JC3019705  |
+| Kevin L. R. de Candia | JC3018784  |
+| Ray G. dos S. Martins | JC3019543  |
+| Kauê M. de Araújo     | JC3019497  |
 
 ---
 
@@ -67,14 +64,18 @@ npm install
 
 ### 3. Configurar Variáveis de Ambiente
 
-Incluir o arquivo `.env` em um repositório público é tido como uma grave falha de segurança. Contudo, para efeitos de demonstração, o repositório atual o contém. Não é necessário alterar as variáveis de ambiente presentes em `.env`, porém é possível.
+Incluir o arquivo **`.env`** em um repositório público é considerado uma falha de segurança. Contudo, para efeitos de demonstração, o repositório atual o contém. Embora não seja necessário alterar as variáveis de ambiente presentes no arquivo, é possível fazê-lo.
 
 ```
-# Exemplo de conteúdo para o arquivo .env
+# Porta da aplicação
 PORT=3000
-SESSION_SECRET="sua_chave_secreta_aqui"
-# O Sequelize criará o arquivo do banco de dados SQLite automaticamente
-DB_FILE=./database/database.sqlite
+
+# Definição do banco de dados SQLite
+DB_DIALECT=sqlite
+DB_STORAGE=database/database.sqlite
+
+# Definição da sessão
+SESSION_SECRET=estoque
 ```
 
 ### 4. Iniciar a Aplicação
@@ -82,7 +83,7 @@ DB_FILE=./database/database.sqlite
 Inicie o servidor Node.js:
 
 ```bash
-npm run start
+npm start
 ```
 
 A aplicação estará acessível em `http://localhost:3000` (ou na porta configurada no seu `.env`).
@@ -94,19 +95,17 @@ A aplicação estará acessível em `http://localhost:3000` (ou na porta configu
 A estrutura do projeto segue o padrão MVC (Model-View-Controller):
 
 ```
-.
-├── node_modules/
-├── public/                 # Arquivos estáticos (CSS, JS do cliente, imagens)
-├── src/
-│   ├── config/             # Configurações do ambiente e do banco de dados
-│   ├── controllers/        # Lógica de manipulação de requisições (Controllers)
-│   ├── models/             # Definições de modelos Sequelize e lógica de acesso a dados (Models)
-│   ├── routes/             # Definição das rotas da aplicação
-│   ├── views/              # Templates EJS (Views)
-│   ├── middlewares/        # Funções de middleware (autenticação, autorização, validação)
-│   └── services/           # Lógica de negócio complexa
-├── .env                    # Variáveis de ambiente (não versionado)
-├── package.json
-├── README.md               # Este arquivo
-└── PROPOSTA.md             # Documento de Proposta do Projeto
+estoque/
+├── config/             # Configurações do banco de dados
+├── controllers/        # Lógica de manipulação de requisições
+├── middleware/         # Funções de middleware
+├── models/             # Definições de modelos
+├── public/             # Arquivos estáticos
+├── routes/             # Definição das rotas da aplicação
+├── views/              # Templates EJS
+├── .env                # Variáveis de ambiente
+├── app.js              # Configuração da aplicação Express
+├── server.js           # Ponto de entrada do servidor
+├── package.json        # Dependências e scripts do projeto
+└── README.md           # Documentação do projeto
 ```

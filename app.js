@@ -21,7 +21,7 @@ app.set("views", path.join(__dirname, "views"));
 
 // Configuração da sessão
 app.use(session({
-	secret: process.env.SESSION_SECRET || 'fallback-secret',
+	secret: process.env.SESSION_SECRET || 'estoque',
 	resave: false,
 	saveUninitialized: false
 }));

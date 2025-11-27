@@ -17,8 +17,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .cache
 *.tsbuildinfo
 
-.idea
-
 .DS_Store
 
 # banco de dados
