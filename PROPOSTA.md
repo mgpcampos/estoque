@@ -26,22 +26,17 @@ Sistema web de gerenciamento de estoque simplificado, focado em qualidade de exe
 **users**
 - `id`: INTEGER PRIMARY KEY AUTOINCREMENT
 - `name`: VARCHAR(100) NOT NULL
-- `password_hash`: VARCHAR(255) NOT NULL
+- `passwordHash`: VARCHAR(255) NOT NULL
 
 **categories**
 - `id`: INTEGER PRIMARY KEY AUTOINCREMENT
 - `name`: VARCHAR(100) UNIQUE NOT NULL
-- `description`: TEXT
 
 **products**
 - `id`: INTEGER PRIMARY KEY AUTOINCREMENT
 - `name`: VARCHAR(200) NOT NULL
-- `description`: TEXT
 - `category_id`: INTEGER NOT NULL (FK → categories.id)
 - `quantity`: INTEGER DEFAULT 0
-- `price`: DECIMAL(10,2) NOT NULL
-- `reorder_level`: INTEGER DEFAULT 10
-- `active`: BOOLEAN DEFAULT true
 
 ### Políticas de Chave Estrangeira
 - **products.category_id**: `ON DELETE RESTRICT` → Impede exclusão de categorias com produtos associados
@@ -106,7 +101,7 @@ Sistema web de gerenciamento de estoque simplificado, focado em qualidade de exe
 - **Sessão**: Armazena apenas user_id e role
 - **Logout**: Destruição completa da sessão
 
-### Middlewares de Proteção
+### Middleware de Proteção
 - `isAuthenticated`: Protege todas as rotas de gerenciamento
 - `isAdmin`: Restringe ações sensíveis (ex: excluir categorias, gerenciar usuários)
 - Validação de entrada com sanitização de strings

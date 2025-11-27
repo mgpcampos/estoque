@@ -1,17 +1,28 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/database");
 
-const Category = sequelize.define(
-	"Category",
+const Categoria = sequelize.define(
+	"Categoria",
 	{
 		id: {
-
-		},
+			type: DataTypes.INTEGER,
+			primaryKey: true,
+			autoIncrement: true
+        },
+		nome: {
+			type: DataTypes.STRING,
+			unique: true,
+			allowNull: false,
+		}
 	},
 	{
-		tableName: "categories",
+		tableName: "categorias",
 		timestamps: false,
 	},
 );
 
-module.exports = Category;
+Categoria.hasMany(Produto, {
+	foreignKey: 'categoria_id'
+});
+
+module.exports = Categoria;
