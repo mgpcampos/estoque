@@ -12,14 +12,7 @@ logs
 _.log
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
-# variáveis de ambiente
-.env
-.env.development.local
-.env.test.local
-.env.production.local
-.env.local
-
-# caches
+# cache
 .eslintcache
 .cache
 *.tsbuildinfo
