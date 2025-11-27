@@ -9,7 +9,7 @@ const Produto = sequelize.define(
 			type: DataTypes.INTEGER,
 			primaryKey: true,
 			autoIncrement: true
-        },
+		},
 		nome: {
 			type: DataTypes.STRING,
 			allowNull: false
@@ -33,9 +33,15 @@ const Produto = sequelize.define(
 	},
 );
 
+// Definir associações
 Produto.belongsTo(Categoria, {
 	foreignKey: 'categoria_id',
-	targetKey: 'id',
+	as: 'categoria'
+});
+
+Categoria.hasMany(Produto, {
+	foreignKey: 'categoria_id',
+	as: 'produtos'
 });
 
 module.exports = Produto;
