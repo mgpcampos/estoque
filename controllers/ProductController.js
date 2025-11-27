@@ -5,26 +5,26 @@ const Produto = require("../models/Product");
 const Categoria = require("../models/Category");
 
 // Lista todos os produtos com suas categorias (JOIN)
-async function listar(req, res) {
+async function listar(_req, res) {
 	try {
-		const produtos = await Produto.findAll({ 
-			include: [{ model: Categoria, as: 'categoria' }] 
+		const produtos = await Produto.findAll({
+			include: [{ model: Categoria, as: "categoria" }],
 		});
-		res.render('pages/produtos/index', { produtos });
+		res.render("pages/produtos/index", { produtos });
 	} catch (erro) {
-		console.error('Erro ao listar produtos:', erro);
-		res.status(500).send('Erro ao carregar produtos');
+		console.error("Erro ao listar produtos:", erro);
+		res.status(500).send("Erro ao carregar produtos");
 	}
 }
 
 // Exibe formulário de criação
-async function criar(req, res) {
+async function criar(_req, res) {
 	try {
 		const categorias = await Categoria.findAll();
-		res.render('pages/produtos/novo', { categorias, erro: null });
+		res.render("pages/produtos/novo", { categorias, erro: null });
 	} catch (erro) {
-		console.error('Erro ao carregar formulário:', erro);
-		res.status(500).send('Erro ao carregar formulário');
+		console.error("Erro ao carregar formulário:", erro);
+		res.status(500).send("Erro ao carregar formulário");
 	}
 }
 
@@ -32,20 +32,20 @@ async function criar(req, res) {
 async function salvar(req, res) {
 	try {
 		const { nome, quantidade, categoria_id } = req.body;
-		
-		await Produto.create({ 
-			nome, 
-			quantidade: parseInt(quantidade) || 0, 
-			categoria_id 
+
+		await Produto.create({
+			nome,
+			quantidade: parseInt(quantidade, 10) || 0,
+			categoria_id,
 		});
-		
-		res.redirect('/produtos');
+
+		res.redirect("/produtos");
 	} catch (erro) {
-		console.error('Erro ao criar produto:', erro);
+		console.error("Erro ao criar produto:", erro);
 		const categorias = await Categoria.findAll();
-		res.render('pages/produtos/novo', { 
-			categorias, 
-			erro: 'Erro ao criar produto' 
+		res.render("pages/produtos/novo", {
+			categorias,
+			erro: "Erro ao criar produto",
 		});
 	}
 }
@@ -54,18 +54,18 @@ async function salvar(req, res) {
 async function mostrar(req, res) {
 	try {
 		const { id } = req.params;
-		const produto = await Produto.findByPk(id, { 
-			include: [{ model: Categoria, as: 'categoria' }] 
+		const produto = await Produto.findByPk(id, {
+			include: [{ model: Categoria, as: "categoria" }],
 		});
-		
+
 		if (!produto) {
-			return res.status(404).send('Produto não encontrado');
+			return res.status(404).send("Produto não encontrado");
 		}
-		
-		res.render('pages/produtos/mostrar', { produto });
+
+		res.render("pages/produtos/mostrar", { produto });
 	} catch (erro) {
-		console.error('Erro ao buscar produto:', erro);
-		res.status(500).send('Erro ao carregar produto');
+		console.error("Erro ao buscar produto:", erro);
+		res.status(500).send("Erro ao carregar produto");
 	}
 }
 
@@ -74,16 +74,16 @@ async function editar(req, res) {
 	try {
 		const { id } = req.params;
 		const produto = await Produto.findByPk(id);
-		
+
 		if (!produto) {
-			return res.status(404).send('Produto não encontrado');
+			return res.status(404).send("Produto não encontrado");
 		}
-		
+
 		const categorias = await Categoria.findAll();
-		res.render('pages/produtos/editar', { produto, categorias, erro: null });
+		res.render("pages/produtos/editar", { produto, categorias, erro: null });
 	} catch (erro) {
-		console.error('Erro ao buscar produto:', erro);
-		res.status(500).send('Erro ao carregar produto');
+		console.error("Erro ao buscar produto:", erro);
+		res.status(500).send("Erro ao carregar produto");
 	}
 }
 
@@ -92,27 +92,27 @@ async function atualizar(req, res) {
 	try {
 		const { id } = req.params;
 		const { nome, quantidade, categoria_id } = req.body;
-		
+
 		const produto = await Produto.findByPk(id);
-		
+
 		if (!produto) {
-			return res.status(404).send('Produto não encontrado');
+			return res.status(404).send("Produto não encontrado");
 		}
-		
+
 		produto.nome = nome;
-		produto.quantidade = parseInt(quantidade) || 0;
+		produto.quantidade = parseInt(quantidade, 10) || 0;
 		produto.categoria_id = categoria_id;
-		
+
 		await produto.save();
-		res.redirect('/produtos');
+		res.redirect("/produtos");
 	} catch (erro) {
-		console.error('Erro ao atualizar produto:', erro);
+		console.error("Erro ao atualizar produto:", erro);
 		const produto = await Produto.findByPk(req.params.id);
 		const categorias = await Categoria.findAll();
-		res.render('pages/produtos/editar', { 
-			produto, 
-			categorias, 
-			erro: 'Erro ao atualizar produto' 
+		res.render("pages/produtos/editar", {
+			produto,
+			categorias,
+			erro: "Erro ao atualizar produto",
 		});
 	}
 }
@@ -122,10 +122,10 @@ async function excluir(req, res) {
 	try {
 		const { id } = req.params;
 		await Produto.destroy({ where: { id } });
-		res.redirect('/produtos');
+		res.redirect("/produtos");
 	} catch (erro) {
-		console.error('Erro ao excluir produto:', erro);
-		res.redirect('/produtos');
+		console.error("Erro ao excluir produto:", erro);
+		res.redirect("/produtos");
 	}
 }
 
@@ -136,5 +136,5 @@ module.exports = {
 	mostrar,
 	editar,
 	atualizar,
-	excluir
+	excluir,
 };

@@ -4,13 +4,13 @@
 const Usuario = require("../models/User");
 
 // Lista todos os usuários
-async function listar(req, res) {
+async function listar(_req, res) {
 	try {
 		const usuarios = await Usuario.findAll();
-		res.render('pages/usuarios/index', { usuarios });
+		res.render("pages/usuarios/index", { usuarios });
 	} catch (erro) {
-		console.error('Erro ao listar usuários:', erro);
-		res.status(500).send('Erro ao carregar usuários');
+		console.error("Erro ao listar usuários:", erro);
+		res.status(500).send("Erro ao carregar usuários");
 	}
 }
 
@@ -19,15 +19,15 @@ async function editar(req, res) {
 	try {
 		const { id } = req.params;
 		const usuario = await Usuario.findByPk(id);
-		
+
 		if (!usuario) {
-			return res.status(404).send('Usuário não encontrado');
+			return res.status(404).send("Usuário não encontrado");
 		}
-		
-		res.render('pages/usuarios/editar', { usuario, erro: null });
+
+		res.render("pages/usuarios/editar", { usuario, erro: null });
 	} catch (erro) {
-		console.error('Erro ao buscar usuário:', erro);
-		res.status(500).send('Erro ao carregar usuário');
+		console.error("Erro ao buscar usuário:", erro);
+		res.status(500).send("Erro ao carregar usuário");
 	}
 }
 
@@ -36,29 +36,29 @@ async function atualizar(req, res) {
 	try {
 		const { id } = req.params;
 		const { nome, senha } = req.body;
-		
+
 		const usuario = await Usuario.findByPk(id);
-		
+
 		if (!usuario) {
-			return res.status(404).send('Usuário não encontrado');
+			return res.status(404).send("Usuário não encontrado");
 		}
-		
+
 		// Atualiza nome
 		usuario.nome = nome;
-		
+
 		// Se senha foi fornecida, atualiza hash
-		if (senha && senha.trim() !== '') {
+		if (senha && senha.trim() !== "") {
 			usuario.hashDaSenha = await Usuario.criarHashSenha(senha);
 		}
-		
+
 		await usuario.save();
-		res.redirect('/usuarios');
+		res.redirect("/usuarios");
 	} catch (erro) {
-		console.error('Erro ao atualizar usuário:', erro);
+		console.error("Erro ao atualizar usuário:", erro);
 		const usuario = await Usuario.findByPk(req.params.id);
-		res.render('pages/usuarios/editar', { 
-			usuario, 
-			erro: 'Erro ao atualizar usuário' 
+		res.render("pages/usuarios/editar", {
+			usuario,
+			erro: "Erro ao atualizar usuário",
 		});
 	}
 }
@@ -67,17 +67,17 @@ async function atualizar(req, res) {
 async function excluir(req, res) {
 	try {
 		const { id } = req.params;
-		
+
 		// Não permite excluir o próprio usuário logado
-		if (parseInt(id) === req.session.userId) {
-			return res.redirect('/usuarios');
+		if (parseInt(id, 10) === req.session.userId) {
+			return res.redirect("/usuarios");
 		}
-		
+
 		await Usuario.destroy({ where: { id } });
-		res.redirect('/usuarios');
+		res.redirect("/usuarios");
 	} catch (erro) {
-		console.error('Erro ao excluir usuário:', erro);
-		res.redirect('/usuarios');
+		console.error("Erro ao excluir usuário:", erro);
+		res.redirect("/usuarios");
 	}
 }
 
@@ -85,5 +85,5 @@ module.exports = {
 	listar,
 	editar,
 	atualizar,
-	excluir
+	excluir,
 };

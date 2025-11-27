@@ -20,11 +20,13 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 // Configuração da sessão
-app.use(session({
-	secret: process.env.SESSION_SECRET || 'estoque',
-	resave: false,
-	saveUninitialized: false
-}));
+app.use(
+	session({
+		secret: process.env.SESSION_SECRET || "estoque",
+		resave: false,
+		saveUninitialized: false,
+	}),
+);
 
 // Middleware global para injetar usuário nas views
 app.use((req, res, next) => {
@@ -33,10 +35,10 @@ app.use((req, res, next) => {
 });
 
 // Rotas
-app.use(require('./routes/authRoutes'));
-app.use(require('./routes/indexRoutes'));
-app.use(require('./routes/userRoutes'));
-app.use(require('./routes/categoryRoutes'));
-app.use(require('./routes/productRoutes'));
+app.use(require("./routes/authRoutes"));
+app.use(require("./routes/indexRoutes"));
+app.use(require("./routes/userRoutes"));
+app.use(require("./routes/categoryRoutes"));
+app.use(require("./routes/productRoutes"));
 
 module.exports = app;

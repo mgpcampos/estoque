@@ -5,7 +5,7 @@ function isAuth(req, res, next) {
 	if (req.session.userId) {
 		return next();
 	}
-	return res.redirect('/registrar');
+	return res.redirect("/registrar");
 }
 
 module.exports = isAuth;

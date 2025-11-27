@@ -8,24 +8,24 @@ const Produto = sequelize.define(
 		id: {
 			type: DataTypes.INTEGER,
 			primaryKey: true,
-			autoIncrement: true
+			autoIncrement: true,
 		},
 		nome: {
 			type: DataTypes.STRING,
-			allowNull: false
+			allowNull: false,
 		},
 		categoria_id: {
 			type: DataTypes.INTEGER,
 			allowNull: false,
 			references: {
-				model: 'categorias',
-				key: 'id'
-			}
+				model: "categorias",
+				key: "id",
+			},
 		},
 		quantidade: {
 			type: DataTypes.INTEGER,
-			defaultValue: 0
-		}
+			defaultValue: 0,
+		},
 	},
 	{
 		tableName: "produtos",
@@ -35,13 +35,13 @@ const Produto = sequelize.define(
 
 // Definir associações
 Produto.belongsTo(Categoria, {
-	foreignKey: 'categoria_id',
-	as: 'categoria'
+	foreignKey: "categoria_id",
+	as: "categoria",
 });
 
 Categoria.hasMany(Produto, {
-	foreignKey: 'categoria_id',
-	as: 'produtos'
+	foreignKey: "categoria_id",
+	as: "produtos",
 });
 
 module.exports = Produto;

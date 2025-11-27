@@ -27,13 +27,13 @@ const Usuario = sequelize.define(
 );
 
 // Método para criar hash da senha
-Usuario.criarHashSenha = async function(senha) {
+Usuario.criarHashSenha = async (senha) => {
 	const saltos = 10;
 	return await bcrypt.hash(senha, saltos);
 };
 
 // Método para validar credenciais
-Usuario.validarCredenciais = async function(nome, senha) {
+Usuario.validarCredenciais = async (nome, senha) => {
 	const usuario = await Usuario.findOne({ where: { nome } });
 	if (!usuario) {
 		return null;
