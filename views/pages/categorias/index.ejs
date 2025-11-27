@@ -1,0 +1,52 @@
+<%- include('../../partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Categorias</h1>
+    <a href="/categorias/nova" class="btn btn-dark">Nova Categoria</a>
+</div>
+
+<% if (erro) { %>
+    <div class="alert alert-danger"><%= erro %></div>
+<% } %>
+
+<% if (sucesso) { %>
+    <div class="alert alert-success"><%= sucesso %></div>
+<% } %>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (categorias.length === 0) { %>
+                        <tr>
+                            <td colspan="3" class="text-center">Nenhuma categoria cadastrada</td>
+                        </tr>
+                    <% } else { %>
+                        <% categorias.forEach(categoria => { %>
+                            <tr>
+                                <td><%= categoria.id %></td>
+                                <td><%= categoria.nome %></td>
+                                <td>
+                                    <a href="/categorias/<%= categoria.id %>" class="btn btn-warning btn-sm">Editar</a>
+                                    <form action="/categorias/<%= categoria.id %>?_method=DELETE" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja excluir esta categoria?')">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<%- include('../../partials/footer') %>
