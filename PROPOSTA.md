@@ -1,120 +1,432 @@
-### 1) Escopo e MVP
+# Proposta do Projeto - Estoque
 
-- **Papéis:** admin, gerente, usuário.
-- **Entidades Centrais:** usuários, categorias, produtos, fornecedores, armazéns, movimentações_de_estoque.
-- **Entidades Opcionais** (se você quiser mais realismo): pedidos_de_compra (+ itens), pedidos_de_venda (+ itens), clientes, saldos_de_estoque (snapshot por produto/armazém).
-- **Fluxos MVP:**
-  - Cadastro/login, acesso baseado em papéis.
-  - CRUD para produtos, categorias, fornecedores, armazéns.
-  - Registrar movimentações de estoque: ENTRADA (compra, ajuste), SAÍDA (venda, ajuste), TRANSFERÊNCIA (dois movimentos: saída de A, entrada em B).
-  - Consultas: estoque atual por armazém, alertas de estoque baixo, lista de produtos com fornecedor/categoria.
+## 1. Escopo e MVP
 
-### 2) Modelo de Banco de Dados (SQLite)
+Sistema web de gerenciamento de estoque simplificado, focado em qualidade de execução e cumprimento rigoroso dos requisitos acadêmicos.
 
-- **users:** id, name, email (único), password_hash, role, created_at.
-- **categories:** id, name.
-- **suppliers:** id, name, email, phone.
-- **warehouses:** id, name, location.
-- **products:** id, name, sku (único), category_id FK, supplier_id FK, unit_price, reorder_level, active.
-- **stock_movements:** id, product_id FK, warehouse_id FK, user_id FK, type[IN, OUT, TRANSFER_IN, TRANSFER_OUT, ADJUST], qty, unit_cost, note, created_at.
-- **Opcional:**
-  - **purchase_orders:** id, supplier_id FK, status[rascunho, recebido, cancelado], created_by FK, created_at.
-  - **purchase_order_items:** id, purchase_order_id FK, product_id FK, qty, unit_cost.
-  - **sales_orders:** id, customer_id FK, status[rascunho, atendido, cancelado], created_by FK.
-  - **sales_order_items:** id, sales_order_id FK, product_id FK, qty, unit_price.
-  - **stock_balances:** product_id FK, warehouse_id FK, qty (mantido para consultas rápidas).
-- **Políticas de Chave Estrangeira (FK):**
-  - products.category_id e products.supplier_id: ON DELETE RESTRICT (você deve mover os produtos antes de excluir uma categoria/fornecedor).
-  - stock_movements FKs: ON DELETE RESTRICT (não perca o histórico).
-  - warehouses e stock_balances: você pode usar ON DELETE CASCADE para stock_balances, de modo que a exclusão de um armazém limpe seus saldos.
-  - itens de pedido: ON DELETE CASCADE para seus pedidos pai; pedidos pai: ON DELETE RESTRICT se já recebidos/atendidos.
+### Entidades Centrais
+- **Usuários (users)**: Controle de acesso e autenticação
+- **Categorias (categories)**: Classificação de produtos
+- **Produtos (products)**: Itens do estoque com relacionamento para categorias
 
-### 3) Mapeamento CRUD para os Requisitos
+### Fluxos MVP
+- Autenticação segura com sessões e senhas criptografadas
+- CRUD completo para usuários, categorias e produtos
+- Consultas com JOIN para exibir produtos com suas categorias
+- Validações de integridade referencial ao excluir categorias
+- Dashboard com estatísticas básicas e alertas de estoque baixo
+- Sistema de busca e filtros por categoria
 
-- **Criar (pelo menos 3):**
-  - Criar produto (com categoria e fornecedor).
-  - Criar armazém.
-  - Criar fornecedor.
-  - Criar movimentação de estoque (ENTRADA/SAÍDA/TRANSFERÊNCIA).
-- **Atualizar (pelo menos 3, um envolvendo relacionamentos):**
-  - Editar produto e alterar sua categoria ou fornecedor (atualiza FKs).
-  - Editar uma nota ou tipo-razão de movimentação de estoque; para TRANSFERÊNCIA, permitir a edição do armazém de destino (relacionamento).
-  - Atualizar detalhes do fornecedor.
-  - Opcional: Alterar o status de um pedido de compra de rascunho para recebido (isso aciona movimentações de estoque) — atualização relacional forte.
-- **Ler (pelo menos 3, pelo menos 2 com JOIN):**
-  - Lista de produtos com nomes de categoria e fornecedor (JOIN products + categories + suppliers).
-  - Estoque atual por produto por armazém (JOIN stock_movements + products + warehouses; agregar SUM de ENTRADA/SAÍDA).
-  - Log de atividade do usuário: movimentações recentes com produto e armazém (JOIN movements + users + products + warehouses).
-  - Opcional: Relatório de estoque baixo (agregar e filtrar por reorder_level).
-- **Excluir (pelo menos 3, pelo menos 1 afetando dados relacionados a FK):**
-  - Excluir fornecedor (permitido apenas se nenhum produto o referenciar; caso contrário, bloquear). Se você tiver uma tabela pivô, cascatear a remoção das linhas pivô.
-  - Excluir armazém (exclusão em cascata de saldos de estoque para esse armazém; bloquear se existirem movimentações, a menos que você permita o arquivamento).
-  - Excluir produto (bloquear se referenciado por movimentações ou itens de pedido; caso contrário, excluir).
-  - Opcional: Excluir pedido de compra (cascateia itens; se já recebido, bloquear).
+---
 
-### 4) Regras de Negócio e Transações
+## 2. Modelo de Banco de Dados (SQLite)
 
-- Ao registrar uma **TRANSFERÊNCIA**, crie dois registros de movimentação em uma única transação de banco de dados: SAÍDA da origem e ENTRADA no destino.
-- Se você implementar pedidos_de_compra e pedidos_de_venda:
-  - Receber um pedido de compra gera movimentações de ENTRADA para cada item; envolva em uma transação.
-  - Atender um pedido de venda gera movimentações de SAÍDA para cada item; envolva em uma transação.
-- **Saldos de estoque opcionais:**
-  - Ou calcule o estoque em tempo real a partir de movimentações_de_estoque usando `SUM(CASE WHEN type in (IN, TRANSFER_IN) THEN qty ELSE -qty END)`.
-  - Ou mantenha a tabela `stock_balances` e atualize-a dentro da mesma transação sempre que inserir movimentações.
+### Estrutura das Tabelas
 
-### 5) Autenticação e Segurança
+**users**
+- `id`: INTEGER PRIMARY KEY AUTOINCREMENT
+- `name`: VARCHAR(100) NOT NULL
+- `email`: VARCHAR(100) UNIQUE NOT NULL
+- `password_hash`: VARCHAR(255) NOT NULL
+- `role`: ENUM('admin', 'user') DEFAULT 'user'
+- `created_at`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
-- **Registro:** hash de senhas com **bcrypt**.
-- **Login:** **express-session** com um armazenamento de sessão (e.g., `connect-sqlite3` para SQLite). Armazene apenas o ID do usuário e o papel na sessão.
-- **Middlewares:**
-  - `isAuthenticated`: protege todas as rotas de inventário.
-  - `hasRole([admin, gerente])` para ações sensíveis (excluir, receber pedidos).
-  - Token CSRF para formulários (`csurf`) se desejado.
-  - Validação de entrada com `express-validator`; sanitize strings.
-- Política de senha e tratamento de erros: mensagens flash amigáveis em caso de falhas.
+**categories**
+- `id`: INTEGER PRIMARY KEY AUTOINCREMENT
+- `name`: VARCHAR(100) UNIQUE NOT NULL
+- `description`: TEXT
 
-### 6) Estrutura MVC e Roteamento RESTful
+**products**
+- `id`: INTEGER PRIMARY KEY AUTOINCREMENT
+- `name`: VARCHAR(200) NOT NULL
+- `description`: TEXT
+- `category_id`: INTEGER NOT NULL (FK → categories.id)
+- `quantity`: INTEGER DEFAULT 0
+- `price`: DECIMAL(10,2) NOT NULL
+- `reorder_level`: INTEGER DEFAULT 10
+- `active`: BOOLEAN DEFAULT true
+- `created_at`: TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
-- **Pastas:**
-  - `src/config` (env, conexão DB), `src/models` (consultas/DAOs), `src/controllers`, `src/routes`, `src/views` (**EJS**), `src/middlewares`, `src/services` (lógica de negócio), `public` (CSS/JS).
-- **Exemplos de Rotas RESTful:**
-  - Produtos: `GET /products`, `GET /products/new`, `POST /products`, `GET /products/:id`, `GET /products/:id/edit`, `PUT /products/:id`, `DELETE /products/:id`.
-  - Fornecedores, Armazéns: mesmo padrão.
-  - Movimentações: `GET /movements`, `GET /movements/new`, `POST /movements`.
-  - Relatórios: `GET /reports/stock`, `GET /reports/low-stock`.
-- Use `method-override` para suportar PUT/DELETE em formulários **EJS**.
+### Políticas de Chave Estrangeira
+- **products.category_id**: `ON DELETE RESTRICT` → Impede exclusão de categorias com produtos associados
+- Validação em nível de aplicação antes de permitir exclusões
 
-### 7) Frontend EJS e UX
+---
 
-- **Parciais:** cabeçalho, barra de navegação (links por papel), rodapé, mensagens flash.
-- **Layout:** grid Bootstrap de 12 colunas; tabelas e formulários responsivos; ícones via Bootstrap Icons.
-- **Páginas:**
-  - Dashboard com estatísticas rápidas (total de produtos, valor de estoque, contagem de estoque baixo).
-  - Listagem de produtos com filtros por categoria/fornecedor; formulários de criação/edição.
-  - Formulário de movimentação com autocompletar de produto, seletor de tipo, seletor de armazém; ações de cópia claras para transferência.
-  - Páginas de relatórios: estoque por armazém, cartões de estoque baixo, log de atividade.
-- Mantenha os formulários simples, com feedback de validação; use espaçamento e paleta de cores consistentes.
+## 3. Mapeamento Completo dos Requisitos CRUD
 
-### 8) Exemplos SQL para JOIN/Agregação (Conceitual)
+### **CREATE (mínimo 3)**
+1. ✅ Criar usuário (com senha criptografada via bcrypt)
+2. ✅ Criar categoria
+3. ✅ Criar produto (associado a uma categoria)
 
-- **Produtos com categoria e fornecedor:** `SELECT p.id, p.name, c.name AS category, s.name AS supplier FROM products p JOIN categories c ON c.id = p.category_id JOIN suppliers s ON s.id = p.supplier_id`.
-- **Estoque atual:** `SELECT m.product_id, m.warehouse_id, SUM(CASE WHEN m.type IN ('IN','TRANSFER_IN','ADJUST_IN') THEN m.qty ELSE -m.qty END) AS qty FROM stock_movements m GROUP BY m.product_id, m.warehouse_id`.
-- **Log de atividade:** `SELECT m.id, u.name AS user, p.name AS product, w.name AS warehouse, m.type, m.qty, m.created_at FROM stock_movements m JOIN users u ON u.id = m.user_id JOIN products p ON p.id = m.product_id JOIN warehouses w ON w.id = m.warehouse_id ORDER BY m.created_at DESC`.
+### **UPDATE (mínimo 3, sendo 1 envolvendo relacionamentos)**
+1. ✅ Atualizar dados do usuário (nome, email, senha)
+2. ✅ Atualizar informações da categoria
+3. ✅ **Atualizar produto e alterar sua categoria** → Atualiza chave estrangeira `category_id`
 
-### 9) Exclusões e Demonstrações de FK
+### **READ (mínimo 3, sendo 2 com JOIN)**
+1. ✅ **Listar todos os produtos com nome da categoria** → JOIN entre products e categories
+2. ✅ **Filtrar produtos por categoria específica** → JOIN com filtro WHERE
+3. ✅ Visualizar perfil do usuário logado
 
-- **Exclusão de Fornecedor:** verifique se `EXISTS products WHERE supplier_id = ?`; se sim, bloqueie e solicite a reatribuição; caso contrário, exclua o fornecedor.
-- **Exclusão de Armazém:** permita apenas se não houver `stock_movements` referenciando-o; se você mantiver `stock_balances`, `ON DELETE CASCADE` prova a exclusão relacionada a FK.
-- **Exclusão de Produto:** bloqueie se existirem movimentações ou itens de pedido; mostre onde ele está sendo usado.
+**Consultas Adicionais (opcionais mas recomendadas):**
+- Listar produtos com estoque baixo (quantity < reorder_level)
+- Buscar produtos por nome
+- Exibir estatísticas gerais (total de produtos, categorias, etc.)
 
-### 10) Pilha de Tecnologia e Configuração
+### **DELETE (mínimo 3, sendo 1 afetando dados relacionados)**
+1. ✅ Excluir usuário
+2. ✅ **Excluir categoria (com validação)** → Verifica se existem produtos associados; se sim, bloqueia a exclusão e exige reatribuição
+3. ✅ Excluir produto
 
-- **Front end:** **HTML + CSS + JavaScript + EJS**
-- **Back end:** **Node.js + Express.js**
-- **Banco de Dados:** **SQLite**
-- **Autenticação:** **express-session + bcrypt**
-- **Controle de Versão:** **Git + GitHub**
-- **Dependências:** `express`, `sqlite3` (ou um wrapper como `better-sqlite3`), `express-session`, `connect-sqlite3` (para armazenamento de sessão), `bcrypt`, `dotenv`, `method-override`, `express-validator`.
-- **Opcional ORM/Migrações:** Knex.js para migrações e seeds.
-- **Ferramentas de Desenvolvimento:** nodemon, ESLint/Prettier.
-- **README:** descrição do projeto, equipe, etapas de instalação/execução, variáveis de ambiente, diagrama do esquema do banco de dados, papéis de usuário, capturas de tela.
+---
+
+## 4. Regras de Negócio
+
+### Validações de Integridade
+- Ao excluir uma categoria, verificar se existem produtos com `category_id` referenciando-a
+- Se produtos associados existirem, retornar erro e listar os produtos afetados
+- Exigir reatribuição de categoria antes de permitir exclusão
+
+### Controle de Estoque
+- Campo `quantity` nunca pode ser negativo
+- Alertas visuais quando `quantity < reorder_level`
+- Campo `active` permite desativar produtos sem excluí-los
+
+### Autenticação
+- Senhas devem ter no mínimo 6 caracteres
+- Email deve ser único no sistema
+- Hash de senhas com **bcrypt** antes de armazenar
+- Sessões gerenciadas com **express-session**
+
+---
+
+## 5. Autenticação e Segurança
+
+### Sistema de Autenticação
+- **Registro**: Hash de senhas com bcrypt (custo: 10)
+- **Login**: express-session com armazenamento em memória
+- **Sessão**: Armazena apenas user_id e role
+- **Logout**: Destruição completa da sessão
+
+### Middlewares de Proteção
+- `isAuthenticated`: Protege todas as rotas de gerenciamento
+- `isAdmin`: Restringe ações sensíveis (ex: excluir categorias, gerenciar usuários)
+- Validação de entrada com sanitização de strings
+- Proteção contra SQL injection via Sequelize ORM
+
+### Políticas de Segurança
+- Senhas nunca retornadas em consultas (excluir do SELECT)
+- Mensagens de erro genéricas em autenticação (evitar enumeração de usuários)
+- Timeout de sessão após inatividade
+
+---
+
+## 6. Estrutura MVC e Roteamento RESTful
+
+### Organização de Pastas
+```
+src/
+├── config/          # Configurações (DB, ambiente)
+├── models/          # Models Sequelize
+├── controllers/     # Lógica de controle
+├── routes/          # Definição de rotas
+├── middlewares/     # Autenticação, validação
+├── views/           # Templates EJS
+│   ├── partials/    # Componentes reutilizáveis
+│   ├── auth/        # Login, registro
+│   ├── products/    # CRUD de produtos
+│   ├── categories/  # CRUD de categorias
+│   └── dashboard/   # Página inicial
+└── public/          # Assets estáticos (CSS, JS, imagens)
+```
+
+### Rotas RESTful Principais
+
+**Autenticação:**
+- `GET /login` - Exibir formulário de login
+- `POST /login` - Processar login
+- `GET /register` - Exibir formulário de registro
+- `POST /register` - Criar novo usuário
+- `POST /logout` - Encerrar sessão
+
+**Produtos:**
+- `GET /products` - Listar todos os produtos (com categoria)
+- `GET /products/new` - Formulário de criação
+- `POST /products` - Criar produto
+- `GET /products/:id` - Visualizar detalhes
+- `GET /products/:id/edit` - Formulário de edição
+- `PUT /products/:id` - Atualizar produto
+- `DELETE /products/:id` - Excluir produto
+
+**Categorias:**
+- `GET /categories` - Listar categorias
+- `GET /categories/new` - Formulário de criação
+- `POST /categories` - Criar categoria
+- `GET /categories/:id/edit` - Formulário de edição
+- `PUT /categories/:id` - Atualizar categoria
+- `DELETE /categories/:id` - Excluir categoria (com validação)
+
+**Dashboard:**
+- `GET /` ou `GET /dashboard` - Página inicial com estatísticas
+
+### Uso de method-override
+Suporte para PUT/DELETE em formulários HTML via `_method` query parameter.
+
+---
+
+## 7. Frontend EJS e UX
+
+### Sistema de Parciais (Partials)
+- `header.ejs` - Cabeçalho com logo e título
+- `navbar.ejs` - Barra de navegação (links variam por papel do usuário)
+- `footer.ejs` - Rodapé com informações do sistema
+- `messages.ejs` - Exibição de mensagens flash (sucesso/erro)
+
+### Layout Responsivo
+- **Grid de 12 colunas** (Bootstrap ou CSS Grid)
+- **Breakpoints:**
+  - Desktop: ≥ 1024px
+  - Tablet: 768px - 1023px
+  - Mobile: < 768px
+- Navegação adaptável (menu hambúrguer em mobile)
+
+### Páginas Principais
+
+**Dashboard:**
+- Cards com estatísticas: total de produtos, valor total do estoque, produtos com estoque baixo
+- Gráfico simples de produtos por categoria (opcional)
+- Lista de alertas (produtos abaixo do reorder_level)
+
+**Listagem de Produtos:**
+- Tabela responsiva com: nome, categoria, quantidade, preço
+- Filtros: por categoria, busca por nome, apenas ativos/inativos
+- Ações: editar, excluir, ativar/desativar
+- Paginação (se houver muitos produtos)
+
+**Formulários:**
+- Validação client-side (HTML5) e server-side
+- Feedback visual de campos obrigatórios
+- Mensagens de erro claras
+- Botões de ação bem visíveis
+
+### Design System
+- **Paleta de cores:** 3-4 cores principais (primária, secundária, sucesso, erro)
+- **Tipografia:** Fonte legível (ex: Inter, Roboto, ou system-ui)
+- **Ícones:** Conjunto consistente (ex: Bootstrap Icons, Font Awesome)
+- **Espaçamento:** Sistema de 4px ou 8px base
+- **Componentes:** Botões, cards, tabelas, formulários com estilo unificado
+
+---
+
+## 8. Exemplos de Consultas SQL (Conceitual)
+
+### Produtos com Categoria (JOIN)
+```sql
+SELECT 
+  p.id, 
+  p.name, 
+  p.quantity, 
+  p.price,
+  c.name AS category_name
+FROM products p
+INNER JOIN categories c ON c.id = p.category_id
+WHERE p.active = true
+ORDER BY p.name;
+```
+
+### Produtos com Estoque Baixo
+```sql
+SELECT 
+  p.id,
+  p.name,
+  p.quantity,
+  p.reorder_level,
+  c.name AS category_name
+FROM products p
+INNER JOIN categories c ON c.id = p.category_id
+WHERE p.quantity < p.reorder_level
+  AND p.active = true;
+```
+
+### Validação Antes de Excluir Categoria
+```sql
+SELECT COUNT(*) AS total_products
+FROM products
+WHERE category_id = ? AND active = true;
+```
+
+---
+
+## 9. Demonstração de Integridade Referencial (FK)
+
+### Cenário de Exclusão de Categoria
+
+**Caso 1: Categoria SEM produtos associados**
+- Sistema permite exclusão
+- Registro removido do banco
+- Mensagem de sucesso exibida
+
+**Caso 2: Categoria COM produtos associados**
+- Sistema bloqueia exclusão
+- Retorna erro HTTP 400
+- Mensagem: "Não é possível excluir esta categoria. Existem X produtos associados."
+- Lista os produtos afetados
+- Sugere reatribuir produtos para outra categoria antes de excluir
+
+### Política de ON DELETE RESTRICT
+Implementada através de:
+1. Constraint do banco de dados (nível SQLite)
+2. Validação adicional na camada de aplicação (controller)
+3. Interface que impede ação antes de tentar exclusão
+
+---
+
+## 10. Tecnologias e Dependências
+
+### Stack Tecnológica
+
+| Camada | Tecnologia | Justificativa |
+|--------|-----------|---------------|
+| **Frontend** | HTML5 + CSS3 + JavaScript + EJS | Renderização server-side, SEO-friendly |
+| **Framework CSS** | Bootstrap 5 | Grid responsivo, componentes prontos |
+| **Backend** | Node.js + Express.js 5.x | Framework minimalista e flexível |
+| **Banco de Dados** | SQLite 3 + Sequelize ORM | Simplicidade, portabilidade, sem servidor |
+| **Autenticação** | express-session + bcrypt | Sessão server-side, hash seguro |
+| **Template Engine** | EJS | Sintaxe simples, JavaScript nativo |
+
+### Dependências Principais (package.json)
+- `express`: Framework web
+- `express-session`: Gerenciamento de sessões
+- `bcrypt`: Hashing de senhas
+- `sequelize`: ORM para banco de dados
+- `sqlite3`: Driver SQLite
+- `ejs`: Template engine
+- `method-override`: Suporte PUT/DELETE em forms
+- `dotenv`: Variáveis de ambiente (opcional)
+
+### Dependências de Desenvolvimento
+- `nodemon`: Auto-reload durante desenvolvimento
+- Linter/Formatter (opcional): ESLint, Prettier, ou Biome
+
+---
+
+## 11. Estrutura do README.md
+
+### Seções Obrigatórias
+
+1. **Descrição do Projeto**
+   - Objetivo do sistema
+   - Contexto acadêmico (projeto final da disciplina)
+   - Conceito de "estoque" simplificado
+
+2. **Integrantes do Grupo**
+   - Tabela com: Nome Completo | Prontuário
+   - Informação sobre contribuições (opcional)
+
+3. **Tecnologias Utilizadas**
+   - Lista completa da stack
+   - Justificativa de escolhas técnicas
+
+4. **Diagrama do Banco de Dados**
+   - Modelo ER ou diagrama de tabelas
+   - Destacar relacionamento FK (products → categories)
+
+5. **Instruções de Instalação**
+   - Pré-requisitos (Node.js, Git)
+   - Comandos de clone, instalação, configuração
+   - Como executar migrations/seeders
+
+6. **Instruções de Execução**
+   - Comando para iniciar servidor
+   - URL de acesso local
+   - Credenciais de usuários de teste
+
+7. **Funcionalidades Implementadas**
+   - Mapeamento claro dos requisitos CRUD
+   - Destaque para operações com FK
+   - Exemplos de consultas JOIN
+
+8. **Capturas de Tela** (opcional mas recomendado)
+   - Dashboard
+   - Lista de produtos
+   - Formulários principais
+
+---
+
+## 12. Critérios de Qualidade e Entrega
+
+### Checklist de Qualidade
+
+**Funcional:**
+- [ ] Todos os 12 requisitos CRUD implementados e testados
+- [ ] Autenticação funcionando (login/logout/sessão)
+- [ ] Relacionamento FK products→categories funcionando
+- [ ] Validação ao excluir categoria com produtos
+
+**Técnico:**
+- [ ] Arquitetura MVC bem estruturada
+- [ ] Rotas RESTful seguindo convenções
+- [ ] Senhas criptografadas com bcrypt
+- [ ] Consultas SQL otimizadas (uso correto de JOIN)
+- [ ] Tratamento de erros adequado
+
+**Interface:**
+- [ ] Layout responsivo em 3 tamanhos de tela
+- [ ] Partials EJS reutilizados (header, footer, navbar, messages)
+- [ ] Design consistente e profissional
+- [ ] Feedback visual para ações do usuário
+
+**Documentação:**
+- [ ] README.md completo e bem formatado
+- [ ] Diagrama de banco de dados claro
+- [ ] Instruções de instalação testadas
+- [ ] Comentários em código onde necessário
+
+**Versionamento:**
+- [ ] Repositório no GitHub com commits de todos os membros
+- [ ] Histórico de commits significativo
+- [ ] .gitignore configurado corretamente
+- [ ] README.md na raiz do repositório
+
+### Entrega Final
+- Repositório GitHub público
+- Link para acesso (se hospedado)
+- Apresentação (se requisitado)
+- Arquivo ZIP com código fonte (backup)
+
+---
+
+## 13. Diferenciais para Maximizar Avaliação
+
+Considerando o escopo mínimo, investir em:
+
+### Qualidade de Código
+- Nomenclatura consistente e descritiva
+- Separação clara de responsabilidades
+- Funções pequenas e focadas
+- Tratamento de erros robusto
+
+### Interface Profissional
+- Animações sutis (transições CSS)
+- Estados de loading
+- Mensagens de confirmação antes de excluir
+- Ícones contextuais
+
+### Funcionalidades Extras Simples
+- Busca em tempo real (JavaScript client-side)
+- Ordenação de tabelas por coluna
+- Exportação de lista de produtos (CSV/PDF)
+- Dark mode toggle
+
+### Documentação Superior
+- Diagramas claros
+- Screenshots bem escolhidos
+- Seção de "Decisões Técnicas" explicando escolhas
+- Vídeo demo de 2-3 minutos (opcional)
+
+---
+
+**Data de Criação:** Novembro 2024  
+**Versão:** 2.0 - Modelo Simplificado
