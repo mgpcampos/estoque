@@ -7,8 +7,8 @@ Este repositório hospeda o código-fonte da aplicação desenvolvida para o pro
 | Nome Completo         | Prontuário |
 | :---                  | :---       |
 | Mateus G. P. Campos   | JC3019705  |
-| Kevin L. R. de Candia | JC3018784  |
 | Ray G. dos S. Martins | JC3019543  |
+| Kevin L. R. de Candia | JC3018784  |
 | Kauê M. de Araújo     | JC3019497  |
 
 ---
@@ -17,16 +17,21 @@ Este repositório hospeda o código-fonte da aplicação desenvolvida para o pro
 
 **Estoque** é uma aplicação web completa, desenvolvida para demonstrar o emprego de conceitos apurados ao decorrer do ano na disciplina de Desenvolvimento de Aplicações Web.
 
-O sistema permite o gerenciamento de:
-*   **Entidades Centrais:** Usuários, Categorias e Produtos
-*   **Controle de Acesso:** Autenticação de usuários implementada desde o princípio para proteger rotas e funcionalidades sensíveis.
-*   **Relatórios:** Geração de consultas com JOINs e uso de chaves estrangeiras para visualização do elementos pertinentes.
+---
+
+## Funcionalidades Principais
+
+*   **Autenticação de Usuários**: Registro e login com senhas criptografadas
+*   **Gerenciamento de Categorias**: CRUD completo de categorias de produtos
+*   **Gerenciamento de Produtos**: CRUD completo com associação a categorias
+*   **Gerenciamento de Usuários**: Visualização, edição e exclusão de usuários
+*   **Controle de Acesso**: Todas as funcionalidades protegidas por autenticação
 
 ---
 
 ## Conjunto de tecnologias, ferramentas e frameworks
 
-A aplicação foi construída utilizando a seguinte pilha tecnológica, conforme os requisitos do projeto:
+A aplicação foi construída utilizando a seguinte pilha de tecnologias, conforme os requisitos do projeto:
 
 | Categoria              | Tecnologia                   | Descrição                                                                                                             |
 | :---                   | :---                         | :---                                                                                                                  |
@@ -70,11 +75,11 @@ Incluir o arquivo **`.env`** em um repositório público é considerado uma falh
 # Porta da aplicação
 PORT=3000
 
-# Definição do banco de dados SQLite
+# Definição do banco de dados
 DB_DIALECT=sqlite
 DB_STORAGE=database/database.sqlite
 
-# Definição da sessão
+# Definição da chave secreta de sessão. Use uma string longa, aleatória e segura em produção.
 SESSION_SECRET=estoque
 ```
 
@@ -86,7 +91,60 @@ Inicie o servidor Node.js:
 npm start
 ```
 
+Para desenvolvimento com reinicialização automática, utilize:
+
+```bash
+npm run dev
+```
+
 A aplicação estará acessível em `http://localhost:3000` (ou na porta configurada no seu `.env`).
+
+---
+
+## Rotas Disponíveis
+
+### Autenticação (Públicas)
+| Método | Rota         | Descrição                    |
+| :---   | :---         | :---                         |
+| GET    | `/entrar`    | Página de login              |
+| POST   | `/entrar`    | Realizar login               |
+| GET    | `/registrar` | Página de registro           |
+| POST   | `/registrar` | Criar nova conta             |
+| POST   | `/sair`      | Logout (requer autenticação) |
+
+### Página inicial (Protegido)
+| Método | Rota | Descrição      |
+| :---   | :--- | :---           |
+| GET    | `/`  | Página inicial |
+
+### Produtos (Protegido)
+| Método | Rota                   | Descrição                      |
+| :---   | :---                   | :---                           |
+| GET    | `/produtos`            | Listar todos os produtos       |
+| GET    | `/produtos/novo`       | Formulário para novo produto   |
+| POST   | `/produtos`            | Criar novo produto             |
+| GET    | `/produtos/:id`        | Visualizar detalhes do produto |
+| GET    | `/produtos/:id/editar` | Formulário de edição           |
+| PUT    | `/produtos/:id`        | Atualizar produto              |
+| DELETE | `/produtos/:id`        | Excluir produto                |
+
+### Categorias (Protegido)
+| Método | Rota                  | Descrição                      |
+| :---   | :---                  | :---                           |
+| GET    | `/categorias`         | Listar todas as categorias     |
+| GET    | `/categorias/nova`    | Formulário para nova categoria |
+| POST   | `/categorias`         | Criar nova categoria           |
+| GET    | `/categorias/:id`     | Formulário de edição           |
+| PUT    | `/categorias/:id`     | Atualizar categoria            |
+| DELETE | `/categorias/:id`     | Excluir categoria              |
+
+### Usuários (Protegido)
+| Método | Rota            | Descrição                |
+| :---   | :---            | :---                     |
+| GET    | `/usuarios`     | Listar todos os usuários |
+| GET    | `/usuarios/:id` | Formulário de edição     |
+| PUT    | `/usuarios/:id` | Atualizar usuário        |
+| DELETE | `/usuarios/:id` | Excluir usuário          |
 
 ---
 
@@ -100,9 +158,8 @@ estoque/
 ├── controllers/        # Lógica de manipulação de requisições
 ├── middleware/         # Funções de middleware
 ├── models/             # Definições de modelos
-├── public/             # Arquivos estáticos
 ├── routes/             # Definição das rotas da aplicação
-├── views/              # Templates EJS
+├── views/              # Templates
 ├── .env                # Variáveis de ambiente
 ├── app.js              # Configuração da aplicação Express
 ├── server.js           # Ponto de entrada do servidor
